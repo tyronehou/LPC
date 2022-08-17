@@ -1,2 +1,2 @@
 # LPC
-Implementation of LPC algorithm for voice coding
+Implementation of linear predictive coding algorithm 
