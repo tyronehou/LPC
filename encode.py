@@ -1,53 +1,32 @@
+"""
+    Filename: encode.py
+    Author: Tyrone Hou
+    Description: Functions related to transforming a signal into an LPC representation.
+    This includes utility functions for calculating residuals, and for determining LPC coefficients
+"""
+
 import numpy as np
 
 from util import chunk_signal
 from util import SignalType
 
-def zero_crossings(sig: np.ndarray):
-    z = 0
-    for i in range(1, len(sig)):
-        if sig[i-1] > 0 and sig[i] < 0 or sig[i-1] < 0 and sig[i] > 0:
-            z += 1
-    return z
-
-
-def autocorrelate(sig):
-    pass
-
-def classify_voicing(sig, sr):
-    """ Classify whether a given portion of a signal is voiced or unvoiced.
-        Likely works best on small signal chunks
-        0 - silent
-        1 - unvoiced
-        2 - voiced
-
-        We use the distributions provided in Pattern recognition approach to voiced-unvoiced-silence classification with applications to speech recognition
-        by Bishnu and Rabiner (IEEE)    
-    """
-
-    # For now, just use the mean of the distribution
-    threshold_10_msec = 30 
-    z = zero_crossings(sig)
-
-    if z > threshold:
-        return SignalType.UNVOICED
-    else:
-        return SignalType.VOICED
-    
-    # zero crossings?
-
-    # autocorrelation?
-    pass
+from voicing import classify_voicing
 
 # def find_fundamental_frequency():
 #     pass
 
-def analyze_lpc(sig: np.ndarray, p: int):
-    # b = A* a + e[n]
-    # where b is the vector of output predictions, A is a matrix of previous inputs, a is a vector of pole coefficients and e is the residual sequence
-    # For a given index, we have b_i = A_i * a + e_i, which maps to single prediction
-    
-    # The params represent the coefficients of the transfer function denominator, where the coefficients are summed, not subtracted
+def analyze_lpc(sig: np.ndarray, p: int, calculate_residual: bool = False):
+    """
+        sig - numpy array representing the signal for which to extract lpc params
+        p - The number of poles in the transfer function
+        calculate_residual - If this is set to True, will return the residual, otherwise will return None
+
+        b = A* a + e[n]
+        where b is the vector of output predictions, A is a matrix of previous inputs, a is a vector of pole coefficients and e is the residual sequence
+        For a given index, we have b_i = A_i * a + e_i, which maps to single prediction
+        
+        The params represent the coefficients of the transfer function denominator, where the coefficients are summed, not subtracted
+    """
     N = len(sig)-p
 
     assert N >= p # assert you have at least p equations for the least squares to sample
@@ -63,10 +42,15 @@ def analyze_lpc(sig: np.ndarray, p: int):
     b_ = np.matmul(A, lpc_coeffs.reshape(-1, 1))
 
     lpc_coeffs *= -1 # We do this to match the form of the transfer function used in scipy lfilter
-    residuals = b - np.squeeze(b_)
     
-    return lpc_coeffs, residuals
+    if calculate_residual:
+        residuals = b - np.squeeze(b_)
+        return lpc_coeffs, residuals
+    else:
+        return lpc_coeffs, None
  
+ def 
+
 def analyze_signal(sig: np.ndarray, sr: int, npoles: int, chunk_size_msec: float, chunk_offset_ratio: float = 1.0):
     """
         sig - numpy array representing the signal for which to extract lpc params
@@ -81,8 +65,16 @@ def analyze_signal(sig: np.ndarray, sr: int, npoles: int, chunk_size_msec: float
     # Split the signal into chunks and return the lpc params for each chunk
     lpc_params = []
     for chunk in chunks:
-        a, e = analyze_lpc(chunk, npoles)
+        a, e = analyze_lpc(chunk, npoles, calculate_residual=True)
         v = classify_voicing(chunk)
-        lpc_params.append((a,e,v))
+
+        if v == SignalType.SILENT:
+            lpc_params.append((a,v))
+        elif v == SignalType.UNVOICED:
+            lpc_params.append((a,v,g))
+        elif v == SignalType.VOICED:
+            # TODO: get fundamental frequency
+            ff = None
+            lpc_params.append((a,v,g,ff))
 
     return lpc_params, chunk_size_msec, chunk_offset_ratio

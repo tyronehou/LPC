@@ -36,7 +36,7 @@ def run_experiment(filename, npoles, chunk_size_msec, chunk_offset_ratio=0, onli
     #     a, e = analyze_lpc(chunk, npoles)
 
     #     source_sig = np.random.rand(chunk_size_samp) * 2 * max_amp - max_amp
-    #     source_power = signal_power(source_sig)
+    #     source_power = sig_power(source_sig)
     #     source_sig *= np.sqrt(np.var(e) / source_power)
 
     #     outputs.append(synthesize_lpc(a, source_sig.astype(np.int16)))
