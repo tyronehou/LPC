@@ -1,25 +1,26 @@
 import unittest
 
-import scipy
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy
 
-from LPC import *
-import librosa
+from LPC import run_experiment
 
 def test_signal_power():
     s = [1, 2, 3, 4]
     unittest.assertEqual(signal_power(s), 7.5)
 
-def test_run_lpc():
+def test_run_experiment():
     filename = "creak.wav"
     #filename = "bubbles.wav"
     #filename = "ah1.wav"
+    filename = "BabyElephantWalk60.wav" 
+
     p = 6
 
-    sr, y, source = run_lpc(f"signals/in/{filename}", p, 0.005, 0.005, online=False)
-    #import pdb; pdb.set_trace()
+    sr, y = run_experiment(f"signals/in/{filename}", p, 10, 10, online=False)
     scipy.io.wavfile.write(f"signals/out/lpc_{filename}", sr, y.astype(np.int16))
-    scipy.io.wavfile.write(f"signals/out/source_{filename}", sr, source.astype(np.int16))
+    #scipy.io.wavfile.write(f"signals/out/source_{filename}", sr, source.astype(np.int16))
 
 def test_combine_sig():
     chunks = [[1,2,3],[4,5,6],[7,8,9]]
@@ -43,11 +44,6 @@ def test_lpc():
     
     sig = sig[sr:2*sr]
     a, e, b_, e_sse = analyze_lpc(sig, p)
-
-    #a_ = librosa.lpc(sig / max_amp, p)
-    #a, g = solve_lpc(sig, p)
-
-    #e_sig = generate_impulse_train(f_hz, sr, t_secs)
 
     e_sig = np.random.randint(-max_amp, max_amp, size=sr*t_secs)
     source_sig = np.random.rand(sr) * 2 * max_amp - max_amp
@@ -80,5 +76,5 @@ def test_lpc():
 
 
 if __name__ == '__main__':
-    test_run_lpc()
+    test_run_experiment()
     #test_lpc()
